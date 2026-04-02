@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logistics Dashboard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#eeede9;--text:#1a1a17;--text2:#65655f;--text3:#9a9a93;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);--green:#008751;--green2:#006b40;
+  --green-bg:#e8f5ee;--red:#c0392b;--red-bg:#fdecea;--blue:#185FA5;--amber:#BA7517;
+  --radius:8px;--radius-lg:12px;--font:system-ui,-apple-system,sans-serif;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1b1b18;--bg2:#232320;--bg3:#2b2b27;--text:#f0f0ea;--text2:#9a9a93;--text3:#65655f;
+  --border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.16);
+  --green-bg:rgba(0,135,81,0.15);--red-bg:rgba(192,57,43,0.15);
+}}
+body{font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh;padding:1.25rem;}
+.wrap{max-width:1180px;margin:0 auto;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;}
+.logo{font-size:16px;font-weight:600;color:var(--text);letter-spacing:-0.3px;}
+.logo span{color:var(--green);}
+.top-actions{display:flex;gap:8px;align-items:center;}
+
+/* tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.5rem;overflow-x:auto;}
+.tab{padding:10px 16px;cursor:pointer;font-size:13px;color:var(--text2);border-bottom:2px solid transparent;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font);transition:all 0.15s;}
+.tab.active{color:var(--green);border-bottom-color:var(--green);font-weight:500;}
+.tab:hover:not(.active){color:var(--text);background:var(--bg2);}
+.panel{display:none;}.panel.active{display:block;}
+
+/* cards */
+.card{background:var(--bg);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1rem 1.25rem;margin-bottom:1rem;}
+.card-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:1rem;text-transform:uppercase;letter-spacing:0.05em;}
+.card-grid{display:grid;gap:1rem;margin-bottom:1rem;}
+.card-grid-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));}
+.card-grid-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
+
+/* metric cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1rem;}
+.kpi{background:var(--bg2);border-radius:var(--radius);padding:14px 16px;position:relative;}
+.kpi-label{font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;}
+.kpi-value{font-size:20px;font-weight:600;line-height:1;}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+.kpi-trend{font-size:11px;font-weight:500;margin-top:4px;}
+.up{color:var(--green);}.down{color:var(--red);}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:8px 10px;font-size:10px;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.06em;}
+td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg2);}
+.tr{text-align:right;}
+
+/* inputs */
+input,select,textarea{font-family:var(--font);font-size:13px;color:var(--text);background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);padding:7px 10px;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);}
+input[readonly]{background:var(--bg2);color:var(--text2);cursor:default;border-style:dashed;}
+textarea{resize:vertical;min-height:60px;}
+
+/* buttons */
+.btn{font-family:var(--font);font-size:13px;cursor:pointer;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:transparent;color:var(--text);transition:all 0.15s;}
+.btn:hover{background:var(--bg2);}
+.btn.primary{background:var(--green);color:#fff;border-color:var(--green);}
+.btn.primary:hover{background:var(--green2);}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem;}
+
+/* slicer */
+.slicer{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;}
+.slicer-btn{padding:4px 12px;font-size:12px;cursor:pointer;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);transition:all 0.15s;font-family:var(--font);}
+.slicer-btn.active{background:var(--green);color:#fff;border-color:var(--green);}
+
+/* misc */
+.overflow-x{overflow-x:auto;}
+.pos{color:var(--green);font-weight:500;}.neg{color:var(--red);font-weight:500;}
+.chart-wrap{position:relative;width:100%;}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;color:var(--text2);}
+.legend span{display:flex;align-items:center;gap:5px;}
+.ld{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;}
+.badge-green{background:var(--green-bg);color:var(--green);}
+.badge-red{background:var(--red-bg);color:var(--red);}
+.badge-blue{background:#E6F1FB;color:#0C447C;}
+.badge-amber{background:#FAEEDA;color:#633806;}
+.auto-badge{font-size:10px;color:var(--green);background:var(--green-bg);padding:1px 6px;border-radius:10px;margin-left:4px;}
+.section-sep{height:1px;background:var(--border);margin:1.25rem 0;}
+
+/* heat row */
+.heat-bar{height:6px;border-radius:3px;background:var(--bg2);margin-top:4px;overflow:hidden;}
+.heat-fill{height:100%;border-radius:3px;transition:width 0.4s;}
+
+/* rank badge */
+.rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:600;background:var(--bg2);color:var(--text2);}
+.rank-1{background:#FFD700;color:#7a5c00;}
+.rank-2{background:#C0C0C0;color:#555;}
+.rank-3{background:#CD7F32;color:#fff;}
+
+/* modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1.5rem;width:100%;max-width:580px;max-height:85vh;overflow-y:auto;margin:1rem;}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:0.5rem;}
+.modal-sub{font-size:12px;color:var(--text2);margin-bottom:1rem;}
+.drop-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:2rem;text-align:center;cursor:pointer;background:var(--bg2);transition:all 0.15s;}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--green);}
+.drop-zone-label{font-size:13px;color:var(--text2);}
+.drop-zone-label strong{color:var(--green);}
+.preview-table{max-height:180px;overflow-y:auto;margin:1rem 0;}
+.map-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:1rem 0;}
+.map-row{display:flex;align-items:center;gap:8px;font-size:12px;}
+.map-label{color:var(--text2);width:110px;flex-shrink:0;}
+.import-msg{font-size:12px;padding:8px 12px;border-radius:var(--radius);margin-top:8px;}
+.import-msg.info{background:#E6F1FB;color:#0C447C;}
+.import-msg.error{background:var(--red-bg);color:var(--red);}
+
+/* form grid */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:8px;margin-bottom:12px;}
+.form-field label{display:block;font-size:11px;color:var(--text2);margin-bottom:3px;font-weight:500;}
+.form-field input,.form-field select,.form-field textarea{width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- CSV modal -->
+<div class="modal-overlay" id="csvModal">
+<div class="modal">
+  <div class="modal-title">Import CSV</div>
+  <div class="modal-sub">Upload a CSV file and map columns to dashboard fields.</div>
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('csvFileInput').click()">
+    <div style="font-size:28px;margin-bottom:8px;">📂</div>
+    <div class="drop-zone-label"><strong>Choose a file</strong> or drag &amp; drop here</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px;">CSV files only</div>
+  </div>
+  <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none" onchange="handleFileSelect(event)">
+  <div id="csvMapSection" style="display:none">
+    <div style="font-size:13px;font-weight:600;margin:1rem 0 0.5rem;">Column mapping</div>
+    <div class="map-grid" id="mapGrid"></div>
+    <div style="font-size:13px;font-weight:600;margin:1rem 0 0.5rem;">Preview</div>
+    <div class="preview-table overflow-x" id="previewTable"></div>
+    <div style="margin-top:0.75rem;font-size:12px;color:var(--text2);">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="importMode" value="append" checked> Append to existing data</label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:4px;"><input type="radio" name="importMode" value="replace"> Replace all existing data</label>
+    </div>
+    <div id="importFeedback"></div>
+    <div style="display:flex;gap:8px;margin-top:1rem;">
+      <button class="btn primary" onclick="doImport()">Import</button>
+      <button class="btn" onclick="closeCSVModal()">Cancel</button>
+    </div>
+  </div>
+  <div id="noFileSection" style="margin-top:1rem;display:flex;justify-content:flex-end;">
+    <button class="btn" onclick="closeCSVModal()">Cancel</button>
+  </div>
+</div>
+</div>
+
+<!-- top bar -->
+<div class="top-bar">
+  <div class="logo">Reliance <span>Logistics</span> &nbsp;·&nbsp; <span style="font-size:12px;font-weight:400;color:var(--text2);">Operations Dashboard</span></div>
+  <div class="top-actions">
+    <span id="save-status" style="font-size:12px;color:var(--text3);"></span>
+  </div>
+</div>
+
+<!-- tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('dataset')">📋 Data Set</button>
+  <button class="tab" onclick="switchTab('overview')">📊 Overview</button>
+  <button class="tab" onclick="switchTab('insights')">💡 Insights</button>
+  <button class="tab" onclick="switchTab('variance')">📈 Variance</button>
+  <button class="tab" onclick="switchTab('clients')">👥 Clients</button>
+</div>
+
+<!-- ═══════════════ DATASET ═══════════════ -->
+<div id="tab-dataset" class="panel active">
+  <div class="toolbar">
+    <button class="btn primary" onclick="showAddRow()">+ Add Row</button>
+    <button class="btn" onclick="openCSVModal()" style="border-color:#1D9E75;color:#1D9E75;">⬆ Import CSV</button>
+    <button class="btn" onclick="exportCSV()">⬇ Export CSV</button>
+    <button class="btn" onclick="clearAllData()" style="color:var(--red);border-color:var(--red);">Clear All</button>
+    <input type="text" id="searchInput" placeholder="Search records…" style="width:170px;" oninput="renderTable()">
+  </div>
+
+  <div id="add-row-form" style="display:none;" class="card">
+    <div class="card-title">Add / Edit Record</div>
+    <div class="form-grid">
+      <div class="form-field"><label>Year</label><input id="f-year" type="number" placeholder="2024"></div>
+      <div class="form-field"><label>Date</label><input id="f-date" type="date"></div>
+      <div class="form-field"><label>File Ref</label><input id="f-ref" placeholder="REF-001"></div>
+      <div class="form-field"><label>Service Type</label><input id="f-service" placeholder="Import FCL"></div>
+      <div class="form-field"><label>20FT</label><input id="f-20ft" type="number" placeholder="0"></div>
+      <div class="form-field"><label>40FT</label><input id="f-40ft" type="number" placeholder="0"></div>
+      <div class="form-field"><label>Invoice No</label><input id="f-inv" placeholder="INV-001"></div>
+      <div class="form-field"><label>Revenue (₦)</label><input id="f-revenue" type="number" placeholder="0" oninput="calcGM()"></div>
+      <div class="form-field"><label>Cost (₦)</label><input id="f-cost" type="number" placeholder="0" oninput="calcGM()"></div>
+      <div class="form-field"><label>VAT (₦)</label><input id="f-vat" type="number" placeholder="0"></div>
+      <div class="form-field"><label>Gross Margin (₦) <span class="auto-badge">auto</span></label><input id="f-gm" type="number" placeholder="Auto" readonly></div>
+      <div class="form-field"><label>GM % <span class="auto-badge">auto</span></label><input id="f-gmpct" type="text" placeholder="Auto" readonly></div>
+      <div class="form-field"><label>Client Name</label><input id="f-client" placeholder="Client"></div>
+    </div>
+    <div class="form-field" style="margin-bottom:12px;"><label>Notes</label><textarea id="f-notes" placeholder="Optional notes about this shipment…"></textarea></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Gross Margin = Revenue − Cost (auto-calculated)</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn primary" onclick="saveRow()">Save Record</button>
+      <button class="btn" onclick="hideAddRow()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="overflow-x">
+    <table>
+      <thead><tr>
+        <th>Year</th><th>Date</th><th>File Ref</th><th>Service</th>
+        <th>20FT</th><th>40FT</th><th>Invoice</th>
+        <th class="tr">Revenue (₦)</th><th class="tr">Cost (₦)</th>
+        <th class="tr">VAT (₦)</th><th class="tr">Margin (₦)</th><th class="tr">GM %</th>
+        <th>Client</th><th>Notes</th><th>Actions</th>
+      </tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+  <div id="noData" style="text-align:center;padding:3rem;color:var(--text3);display:none;">No records yet. Click "+ Add Row" or "Import CSV" to get started.</div>
+</div>
+
+<!-- ═══════════════ OVERVIEW ═══════════════ -->
+<div id="tab-overview" class="panel">
+  <div id="ov-slicer" class="slicer"></div>
+  <div class="kpi-grid" id="ov-kpis"></div>
+
+  <div class="card-grid card-grid-2">
+    <div class="card">
+      <div class="card-title">Revenue by client (₦)</div>
+      <div id="ov-legend" class="legend"></div>
+      <div class="chart-wrap" style="height:280px;"><canvas id="scatterChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Shipment volume by month</div>
+      <div class="chart-wrap" style="height:280px;"><canvas id="volumeChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Monthly revenue trend (₦) — current vs previous year</div>
+    <div id="yoy-legend" class="legend"></div>
+    <div class="chart-wrap" style="height:220px;"><canvas id="yoyChart"></canvas></div>
+  </div>
+
+  <div class="card-grid card-grid-2">
+    <div class="card">
+      <div class="card-title">Service type — revenue split</div>
+      <div id="svc-legend" class="legend"></div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="serviceChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Container utilisation — 20FT vs 40FT</div>
+      <div id="cont-legend" class="legend"></div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="containerChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ INSIGHTS ═══════════════ -->
+<div id="tab-insights" class="panel">
+  <div id="ins-slicer" class="slicer"></div>
+
+  <!-- client ranking -->
+  <div class="card">
+    <div class="card-title">Client ranking — by revenue</div>
+    <div class="overflow-x">
+      <table>
+        <thead><tr><th>#</th><th>Client</th><th class="tr">Revenue (₦)</th><th class="tr">Cost (₦)</th><th class="tr">Gross Margin (₦)</th><th class="tr">Margin %</th><th class="tr">Share of Total</th><th>Profitability</th></tr></thead>
+        <tbody id="rankBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MoM growth -->
+  <div class="card-grid card-grid-2">
+    <div class="card">
+      <div class="card-title">Month-over-month revenue growth (%)</div>
+      <div id="mom-legend" class="legend"></div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="momChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Service type — margin comparison (₦)</div>
+      <div id="svcmgn-legend" class="legend"></div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="svcMarginChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- profitability heatmap -->
+  <div class="card">
+    <div class="card-title">Client profitability heatmap — margin % by year</div>
+    <div id="heatmap" class="overflow-x"></div>
+  </div>
+
+  <!-- alerts -->
+  <div class="card">
+    <div class="card-title">Data alerts</div>
+    <div id="alertsList"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ VARIANCE ═══════════════ -->
+<div id="tab-variance" class="panel">
+  <div class="card">
+    <div class="card-title">Yearly revenue vs cost (₦)</div>
+    <div id="var-legend" class="legend"></div>
+    <div class="chart-wrap" style="height:260px;"><canvas id="yearlyVarChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+      <div class="card-title" style="margin-bottom:0;">Monthly variance — year:</div>
+      <select id="varYearSelect" onchange="renderVariance()"></select>
+    </div>
+    <div id="mv-legend" class="legend"></div>
+    <div class="chart-wrap" style="height:240px;"><canvas id="monthlyVarChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Yearly summary</div>
+    <div class="overflow-x">
+      <table><thead><tr><th>Year</th><th class="tr">Revenue (₦)</th><th class="tr">Cost (₦)</th><th class="tr">Gross Margin (₦)</th><th class="tr">Margin %</th><th class="tr">YoY Rev Δ</th></tr></thead>
+      <tbody id="varTableBody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ CLIENTS ═══════════════ -->
+<div id="tab-clients" class="panel">
+  <div id="cl-slicer" class="slicer"></div>
+  <div id="clientCards"></div>
+</div>
+
+</div><!-- /wrap -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── STATE ──────────────────────────────────────────────────
+let data=[], editIndex=-1, activeOvYear='All', activeClYear='All', activeInsYear='All';
+let charts={};
+let csvHeaders=[], csvRows=[];
+const SK='logistics_dashboard_v1';
+const FIELDS=[{key:'year',label:'Year'},{key:'date',label:'Date'},{key:'ref',label:'File Ref'},{key:'service',label:'Service Type'},{key:'ft20',label:'20FT'},{key:'ft40',label:'40FT'},{key:'invoice',label:'Invoice No'},{key:'revenue',label:'Revenue'},{key:'cost',label:'Cost'},{key:'vat',label:'VAT'},{key:'gm',label:'Gross Margin'},{key:'client',label:'Client Name'},{key:'notes',label:'Notes'}];
+const C=['#008751','#185FA5','#D85A30','#BA7517','#993556','#534AB7','#1D9E75','#A32D2D','#0F6E56','#3C3489','#7B3F00','#006994'];
+
+// ── FORMATTING ─────────────────────────────────────────────
+function fN(n){const v=Number(n||0);if(v<0)return'-'+fN(-v);if(v>=1e9)return'₦'+(v/1e9).toFixed(2)+'B';if(v>=1e6)return'₦'+(v/1e6).toFixed(2)+'M';if(v>=1e3)return'₦'+(v/1e3).toFixed(0)+'K';return'₦'+Math.round(v).toLocaleString();}
+function tK(v){if(Math.abs(v)>=1e9)return(v<0?'-':'')+'₦'+(Math.abs(v)/1e9).toFixed(1)+'B';if(Math.abs(v)>=1e6)return(v<0?'-':'')+'₦'+(Math.abs(v)/1e6).toFixed(1)+'M';if(Math.abs(v)>=1e3)return(v<0?'-':'')+'₦'+(Math.abs(v)/1e3).toFixed(0)+'K';return(v<0?'-':'')+'₦'+Math.abs(Math.round(v));}
+const pct=n=>Number(n||0).toFixed(1)+'%';
+
+// ── STORAGE ────────────────────────────────────────────────
+function saveData(){try{localStorage.setItem(SK,JSON.stringify(data));showSS('Saved');}catch(e){showSS('Save failed');}}
+function loadData(){try{const r=localStorage.getItem(SK);if(r)data=JSON.parse(r);else{data=getSample();saveData();}}catch(e){data=getSample();saveData();}init();}
+function showSS(m){const e=document.getElementById('save-status');e.textContent=m;setTimeout(()=>e.textContent='',2000);}
+
+// ── HELPERS ────────────────────────────────────────────────
+function getYears(){const ys=[...new Set(data.map(r=>String(r.year)))].sort();return[...new Set([...['2022','2023','2024','2025','2026'],...ys])].sort();}
+function getFD(yr){return yr==='All'?data:data.filter(r=>String(r.year)===String(yr));}
+function sum(arr,k){return arr.reduce((s,r)=>s+(+r[k]||0),0);}
+function calcGM(){const r=parseFloat(document.getElementById('f-revenue').value)||0;const c=parseFloat(document.getElementById('f-cost').value)||0;const gm=r-c;document.getElementById('f-gm').value=gm||'';;document.getElementById('f-gmpct').value=r>0?((gm/r)*100).toFixed(1)+'%':'';}
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+// ── TABS ───────────────────────────────────────────────────
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['dataset','overview','insights','variance','clients'][i]===t));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='overview')renderOverview();
+  if(t==='insights')renderInsights();
+  if(t==='variance')renderVariance();
+  if(t==='clients')renderClients();
+}
+
+// ── SLICERS ────────────────────────────────────────────────
+function buildSlicer(id,active,fn){const years=['All',...getYears()];document.getElementById(id).innerHTML=years.map(y=>`<button class="slicer-btn${active===y?' active':''}" onclick="${fn}('${y}')">${y}</button>`).join('');}
+function setOvYear(y){activeOvYear=y;renderOverview();}
+function setClYear(y){activeClYear=y;renderClients();}
+function setInsYear(y){activeInsYear=y;renderInsights();}
+
+// ── DATASET ────────────────────────────────────────────────
+function showAddRow(){editIndex=-1;clearForm();document.getElementById('add-row-form').style.display='block';}
+function hideAddRow(){document.getElementById('add-row-form').style.display='none';editIndex=-1;}
+function clearForm(){['year','date','ref','service','20ft','40ft','inv','revenue','cost','vat','gm','client','notes'].forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});}
+function saveRow(){
+  const rev=+document.getElementById('f-revenue').value||0, cost=+document.getElementById('f-cost').value||0;
+  const row={year:+document.getElementById('f-year').value||new Date().getFullYear(),date:document.getElementById('f-date').value,ref:document.getElementById('f-ref').value,service:document.getElementById('f-service').value,ft20:+document.getElementById('f-20ft').value||0,ft40:+document.getElementById('f-40ft').value||0,invoice:document.getElementById('f-inv').value,revenue:rev,cost:cost,vat:+document.getElementById('f-vat').value||0,gm:rev-cost,gmpct:rev>0?((rev-cost)/rev*100):0,client:document.getElementById('f-client').value,notes:document.getElementById('f-notes').value};
+  if(!row.client){alert('Client name required');return;}
+  if(editIndex>=0)data[editIndex]=row;else data.push(row);
+  hideAddRow();saveData();renderTable();
+}
+function editRow(i){
+  editIndex=i;const r=data[i];
+  ['year','date','ref','service','inv','revenue','cost','vat','gm','client','notes'].forEach(f=>{const el=document.getElementById('f-'+f);if(el&&r[f]!==undefined)el.value=r[f]||'';});
+  document.getElementById('f-20ft').value=r.ft20||0;document.getElementById('f-40ft').value=r.ft40||0;document.getElementById('f-gmpct').value=r.revenue>0?((r.gm/r.revenue)*100).toFixed(1)+'%':'';
+  document.getElementById('add-row-form').style.display='block';document.getElementById('add-row-form').scrollIntoView({behavior:'smooth'});
+}
+function deleteRow(i){if(!confirm('Delete this record?'))return;data.splice(i,1);saveData();renderTable();}
+function clearAllData(){if(!confirm('Clear ALL records? This cannot be undone.'))return;data=[];saveData();renderTable();}
+function renderTable(){
+  const q=(document.getElementById('searchInput').value||'').toLowerCase();
+  const filtered=data.filter(r=>!q||Object.values(r).some(v=>String(v).toLowerCase().includes(q)));
+  document.getElementById('noData').style.display=data.length===0?'block':'none';
+  document.getElementById('tableBody').innerHTML=filtered.map(r=>{
+    const ri=data.indexOf(r);
+    const gmCls=r.gm>=0?'pos':'neg';
+    return `<tr>
+      <td>${r.year}</td><td>${r.date||''}</td><td>${r.ref||''}</td><td>${r.service||''}</td>
+      <td>${r.ft20||0}</td><td>${r.ft40||0}</td><td>${r.invoice||''}</td>
+      <td class="tr">${fN(r.revenue)}</td><td class="tr">${fN(r.cost)}</td>
+      <td class="tr">${fN(r.vat)}</td><td class="tr ${gmCls}">${fN(r.gm)}</td><td class="tr ${gmCls}">${r.revenue>0?pct(r.gm/r.revenue*100):'—'}</td>
+      <td>${r.client||''}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);" title="${(r.notes||'').replace(/"/g,'&quot;')}">${r.notes||'—'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn" onclick="editRow(${ri})" style="font-size:11px;padding:3px 8px;margin-right:4px;">Edit</button>
+        <button class="btn" onclick="dupRow(${ri})" style="font-size:11px;padding:3px 8px;margin-right:4px;">Dup</button>
+        <button class="btn" onclick="deleteRow(${ri})" style="font-size:11px;padding:3px 8px;color:var(--red);border-color:var(--red);">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function dupRow(i){const r={...data[i]};data.push(r);saveData();renderTable();}
+function exportCSV(){
+  const hdr='Year,Date,File Ref,Service Type,20FT,40FT,Invoice No,Revenue (NGN),Cost (NGN),VAT (NGN),Gross Margin (NGN),GM %,Client Name,Notes\n';
+  const rows=data.map(r=>[r.year,r.date,r.ref,r.service,r.ft20,r.ft40,r.invoice,r.revenue,r.cost,r.vat,r.gm,(r.revenue>0?((r.gm/r.revenue)*100).toFixed(2)+'%':''),r.client,(r.notes||'').replace(/,/g,' ')].join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([hdr+rows],{type:'text/csv'}));a.download='logistics_data_ngn.csv';a.click();
+}
+
+// ── OVERVIEW ───────────────────────────────────────────────
+function renderOverview(){
+  buildSlicer('ov-slicer',activeOvYear,'setOvYear');
+  const fd=getFD(activeOvYear);
+  const totalRev=sum(fd,'revenue'),totalCost=sum(fd,'cost'),totalGM=sum(fd,'gm');
+  const shipments=fd.length, avgGM=shipments?totalGM/shipments:0;
+  const mpct=totalRev>0?totalGM/totalRev*100:0;
+  // top client
+  const clients=[...new Set(fd.map(r=>r.client))].filter(Boolean);
+  const topClient=clients.sort((a,b)=>fd.filter(r=>r.client===b).reduce((s,r)=>s+r.revenue,0)-fd.filter(r=>r.client===a).reduce((s,r)=>s+r.revenue,0))[0]||'—';
+  const topRev=fd.filter(r=>r.client===topClient).reduce((s,r)=>s+r.revenue,0);
+
+  document.getElementById('ov-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total Revenue</div><div class="kpi-value">${fN(totalRev)}</div></div>
+    <div class="kpi"><div class="kpi-label">Total Cost</div><div class="kpi-value">${fN(totalCost)}</div></div>
+    <div class="kpi"><div class="kpi-label">Gross Margin</div><div class="kpi-value">${fN(totalGM)}</div><div class="kpi-sub">${pct(mpct)} margin</div></div>
+    <div class="kpi"><div class="kpi-label">Shipments</div><div class="kpi-value">${shipments.toLocaleString()}</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Margin / Shipment</div><div class="kpi-value">${fN(avgGM)}</div></div>
+    <div class="kpi"><div class="kpi-label">Top Client</div><div class="kpi-value" style="font-size:14px;">${topClient}</div><div class="kpi-sub">${fN(topRev)}</div></div>
+  `;
+
+  // scatter – revenue by client
+  document.getElementById('ov-legend').innerHTML=clients.map((c,i)=>`<span><span class="ld" style="background:${C[i%C.length]}"></span>${c}</span>`).join('');
+  destroyChart('scatter');
+  charts.scatter=new Chart(document.getElementById('scatterChart'),{type:'bubble',data:{datasets:clients.map((c,i)=>({label:c,data:[{x:i+1,y:fd.filter(r=>r.client===c).reduce((s,r)=>s+r.revenue,0),r:14}],backgroundColor:C[i%C.length]+'99',borderColor:C[i%C.length],borderWidth:1.5}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fN(ctx.raw.y)}}},scales:{x:{display:false,min:0,max:clients.length+1},y:{ticks:{callback:v=>tK(v)},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+
+  // volume chart
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  destroyChart('volume');
+  charts.volume=new Chart(document.getElementById('volumeChart'),{type:'bar',data:{labels:months,datasets:[{label:'Shipments',data:months.map((_,m)=>fd.filter(r=>r.date&&new Date(r.date).getMonth()===m).length),backgroundColor:'#008751aa',borderColor:'#008751',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{autoSkip:false,maxRotation:0}},y:{ticks:{stepSize:1},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+
+  // YoY comparison
+  const yrs=getYears();const curYr=activeOvYear==='All'?String(Math.max(...yrs.map(Number))):activeOvYear;
+  const prevYr=String(parseInt(curYr)-1);
+  const curData=data.filter(r=>String(r.year)===curYr);
+  const prevData=data.filter(r=>String(r.year)===prevYr);
+  document.getElementById('yoy-legend').innerHTML=`<span><span class="ld" style="background:#008751"></span>${curYr}</span><span><span class="ld" style="background:#185FA5"></span>${prevYr}</span>`;
+  destroyChart('yoy');
+  charts.yoy=new Chart(document.getElementById('yoyChart'),{type:'line',data:{labels:months,datasets:[{label:curYr,data:months.map((_,m)=>curData.filter(r=>r.date&&new Date(r.date).getMonth()===m).reduce((s,r)=>s+r.revenue,0)),borderColor:'#008751',backgroundColor:'#00875115',fill:true,tension:0.4,pointRadius:3},{label:prevYr,data:months.map((_,m)=>prevData.filter(r=>r.date&&new Date(r.date).getMonth()===m).reduce((s,r)=>s+r.revenue,0)),borderColor:'#185FA5',backgroundColor:'transparent',borderDash:[4,4],tension:0.4,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{autoSkip:false,maxRotation:0}},y:{ticks:{callback:v=>tK(v)},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+
+  // service type donut
+  const svcs=[...new Set(fd.map(r=>r.service))].filter(Boolean);
+  const svcRevs=svcs.map(s=>fd.filter(r=>r.service===s).reduce((a,r)=>a+r.revenue,0));
+  document.getElementById('svc-legend').innerHTML=svcs.map((s,i)=>`<span><span class="ld" style="background:${C[i%C.length]}"></span>${s} — ${fN(svcRevs[i])}</span>`).join('');
+  destroyChart('service');
+  charts.service=new Chart(document.getElementById('serviceChart'),{type:'doughnut',data:{labels:svcs,datasets:[{data:svcRevs,backgroundColor:svcs.map((_,i)=>C[i%C.length]+'cc'),borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fN(ctx.raw)}}},cutout:'62%'}});
+
+  // container utilization
+  const t20=fd.reduce((s,r)=>s+(r.ft20||0),0), t40=fd.reduce((s,r)=>s+(r.ft40||0),0);
+  document.getElementById('cont-legend').innerHTML=`<span><span class="ld" style="background:#008751"></span>20FT — ${t20}</span><span><span class="ld" style="background:#185FA5"></span>40FT — ${t40}</span>`;
+  destroyChart('container');
+  charts.container=new Chart(document.getElementById('containerChart'),{type:'doughnut',data:{labels:['20FT','40FT'],datasets:[{data:[t20,t40],backgroundColor:['#008751cc','#185FA5cc'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} units`}}},cutout:'62%'}});
+}
+
+// ── INSIGHTS ───────────────────────────────────────────────
+function renderInsights(){
+  buildSlicer('ins-slicer',activeInsYear,'setInsYear');
+  const fd=getFD(activeInsYear);
+  const clients=[...new Set(data.map(r=>r.client))].filter(Boolean).sort();
+  const totalRev=sum(fd,'revenue');
+
+  // client ranking
+  const ranked=clients.map(c=>{const cr=fd.filter(r=>r.client===c);const rev=sum(cr,'revenue'),cost=sum(cr,'cost'),gm=sum(cr,'gm');return{c,rev,cost,gm,mp:rev>0?gm/rev*100:0};}).sort((a,b)=>b.rev-a.rev);
+  document.getElementById('rankBody').innerHTML=ranked.map((r,i)=>{
+    const share=totalRev>0?r.rev/totalRev*100:0;
+    const mpCls=r.mp>=20?'pos':r.mp>=0?'':'neg';
+    const rankBadge=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
+    return `<tr>
+      <td><span class="rank ${rankBadge}">${i+1}</span></td>
+      <td style="font-weight:500">${r.c}</td>
+      <td class="tr">${fN(r.rev)}</td>
+      <td class="tr">${fN(r.cost)}</td>
+      <td class="tr ${mpCls}">${fN(r.gm)}</td>
+      <td class="tr ${mpCls}">${pct(r.mp)}</td>
+      <td class="tr">${pct(share)}</td>
+      <td style="min-width:100px"><div class="heat-bar"><div class="heat-fill" style="width:${Math.max(0,Math.min(100,r.mp*2))}%;background:${r.mp>=20?'#008751':r.mp>=10?'#BA7517':'#c0392b'}"></div></div></td>
+    </tr>`;
+  }).join('');
+
+  // MoM growth
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const yrs=getYears();const yr=activeInsYear==='All'?String(Math.max(...yrs.map(Number))):activeInsYear;
+  const mRevs=months.map((_,m)=>fd.filter(r=>String(r.year)===yr&&r.date&&new Date(r.date).getMonth()===m).reduce((s,r)=>s+r.revenue,0));
+  const momGrowth=mRevs.map((v,i)=>i===0?0:mRevs[i-1]>0?((v-mRevs[i-1])/mRevs[i-1]*100):0);
+  const momColors=momGrowth.map(v=>v>=0?'#008751aa':'#c0392baa');
+  document.getElementById('mom-legend').innerHTML=`<span><span class="ld" style="background:#008751"></span>Growth &gt;0%</span><span><span class="ld" style="background:#c0392b"></span>Decline &lt;0%</span>`;
+  destroyChart('mom');
+  charts.mom=new Chart(document.getElementById('momChart'),{type:'bar',data:{labels:months,datasets:[{label:'MoM %',data:momGrowth.map(v=>+v.toFixed(1)),backgroundColor:momColors,borderColor:momColors.map(c=>c.replace('aa','')),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>(ctx.raw>=0?'+':'')+ctx.raw+'%'}}},scales:{x:{ticks:{autoSkip:false,maxRotation:0}},y:{ticks:{callback:v=>v+'%'},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+
+  // service type margin comparison
+  const svcs=[...new Set(fd.map(r=>r.service))].filter(Boolean);
+  const svcGMs=svcs.map(s=>fd.filter(r=>r.service===s).reduce((a,r)=>a+r.gm,0));
+  document.getElementById('svcmgn-legend').innerHTML=`<span><span class="ld" style="background:#008751"></span>Gross Margin (₦)</span>`;
+  destroyChart('svcMargin');
+  charts.svcMargin=new Chart(document.getElementById('svcMarginChart'),{type:'bar',data:{labels:svcs,datasets:[{label:'Gross Margin',data:svcGMs,backgroundColor:svcs.map((_,i)=>C[i%C.length]+'bb'),borderColor:svcs.map((_,i)=>C[i%C.length]),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{autoSkip:false,maxRotation:20}},y:{ticks:{callback:v=>tK(v)},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+
+  // profitability heatmap
+  const heatYears=getYears().filter(y=>data.some(r=>String(r.year)===y));
+  let hmHtml=`<table><thead><tr><th>Client</th>${heatYears.map(y=>`<th class="tr">${y}</th>`).join('')}</tr></thead><tbody>`;
+  clients.forEach(c=>{
+    hmHtml+=`<tr><td style="font-weight:500;white-space:nowrap">${c}</td>`;
+    heatYears.forEach(y=>{
+      const yr=data.filter(r=>r.client===c&&String(r.year)===y);
+      const rev=sum(yr,'revenue'),gm=sum(yr,'gm'),mp=rev>0?gm/rev*100:null;
+      if(mp===null){hmHtml+=`<td class="tr" style="color:var(--text3)">—</td>`;return;}
+      const bg=mp>=30?'#008751':mp>=20?'#1D9E75':mp>=10?'#BA7517':mp>=0?'#c0392b':'#8B0000';
+      const light=mp>=10;
+      hmHtml+=`<td class="tr"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:500;background:${bg}22;color:${bg}">${pct(mp)}</span></td>`;
+    });
+    hmHtml+='</tr>';
+  });
+  hmHtml+='</tbody></table>';
+  document.getElementById('heatmap').innerHTML=hmHtml;
+
+  // alerts
+  const alerts=[];
+  data.forEach(r=>{if(r.revenue===0)alerts.push({type:'warn',msg:`Zero revenue — ${r.client} / ${r.ref||r.date||r.year}`,});});
+  data.forEach(r=>{if(r.cost>r.revenue&&r.revenue>0)alerts.push({type:'error',msg:`Cost exceeds revenue — ${r.client} / ${r.ref||r.date||r.year} (Cost: ${fN(r.cost)}, Rev: ${fN(r.revenue)})`});});
+  clients.forEach(c=>{
+    const last=data.filter(r=>r.client===c&&r.date).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    if(last){const days=(Date.now()-new Date(last.date))/(86400000);if(days>90)alerts.push({type:'info',msg:`Inactive client — ${c} (last activity ${Math.round(days)} days ago)`});}
+  });
+  document.getElementById('alertsList').innerHTML=alerts.length===0
+    ?'<div style="color:var(--text3);font-size:13px;padding:4px 0;">No alerts — data looks clean ✓</div>'
+    :alerts.map(a=>`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;"><span class="badge ${a.type==='error'?'badge-red':a.type==='warn'?'badge-amber':'badge-blue'}">${a.type==='error'?'error':a.type==='warn'?'warn':'info'}</span><span>${a.msg}</span></div>`).join('');
+}
+
+// ── VARIANCE ───────────────────────────────────────────────
+function renderVariance(){
+  const years=getYears();
+  const sel=document.getElementById('varYearSelect');
+  const curVal=sel.value||years[years.length-1];
+  sel.innerHTML=years.map(y=>`<option value="${y}"${y===curVal?' selected':''}>${y}</option>`).join('');
+  const yRevs=years.map(y=>sum(data.filter(r=>String(r.year)===y),'revenue'));
+  const yCosts=years.map(y=>sum(data.filter(r=>String(r.year)===y),'cost'));
+  document.getElementById('var-legend').innerHTML=`<span><span class="ld" style="background:#008751"></span>Revenue</span><span><span class="ld" style="background:#D85A30"></span>Cost</span>`;
+  destroyChart('yVar');
+  charts.yVar=new Chart(document.getElementById('yearlyVarChart'),{type:'bar',data:{labels:years,datasets:[{label:'Revenue',data:yRevs,backgroundColor:'#00875199',borderColor:'#008751',borderWidth:1},{label:'Cost',data:yCosts,backgroundColor:'#D85A3099',borderColor:'#D85A30',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{autoSkip:false}},y:{ticks:{callback:v=>tK(v)},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+
+  const selYear=sel.value||curVal;
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mRevs=months.map((_,m)=>sum(data.filter(r=>String(r.year)===selYear&&r.date&&new Date(r.date).getMonth()===m),'revenue'));
+  const mCosts=months.map((_,m)=>sum(data.filter(r=>String(r.year)===selYear&&r.date&&new Date(r.date).getMonth()===m),'cost'));
+  document.getElementById('mv-legend').innerHTML=`<span><span class="ld" style="background:#008751"></span>Revenue</span><span><span class="ld" style="background:#D85A30"></span>Cost</span><span><span class="ld" style="background:#185FA5"></span>Margin</span>`;
+  destroyChart('mVar');
+  charts.mVar=new Chart(document.getElementById('monthlyVarChart'),{type:'bar',data:{labels:months,datasets:[{label:'Revenue',data:mRevs,backgroundColor:'#00875199',borderColor:'#008751',borderWidth:1},{label:'Cost',data:mCosts,backgroundColor:'#D85A3099',borderColor:'#D85A30',borderWidth:1},{label:'Margin',data:mRevs.map((r,i)=>r-mCosts[i]),type:'line',borderColor:'#185FA5',backgroundColor:'transparent',tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{autoSkip:false,maxRotation:0}},y:{ticks:{callback:v=>tK(v)},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+
+  document.getElementById('varTableBody').innerHTML=years.map((y,i)=>{
+    const yr=data.filter(r=>String(r.year)===y);
+    const rev=sum(yr,'revenue'),cost=sum(yr,'cost'),gm=rev-cost;
+    const prevRev=i>0?sum(data.filter(r=>String(r.year)===years[i-1]),'revenue'):null;
+    const yoyDelta=prevRev&&prevRev>0?((rev-prevRev)/prevRev*100):null;
+    const yoyHtml=yoyDelta===null?'—':`<span class="${yoyDelta>=0?'pos':'neg'}">${yoyDelta>=0?'+':''}${yoyDelta.toFixed(1)}%</span>`;
+    return `<tr><td>${y}</td><td class="tr">${fN(rev)}</td><td class="tr">${fN(cost)}</td><td class="tr ${gm>=0?'pos':'neg'}">${fN(gm)}</td><td class="tr ${gm>=0?'pos':'neg'}">${pct(rev>0?gm/rev*100:0)}</td><td class="tr">${yoyHtml}</td></tr>`;
+  }).join('');
+}
+
+// ── CLIENTS ────────────────────────────────────────────────
+function renderClients(){
+  buildSlicer('cl-slicer',activeClYear,'setClYear');
+  const fd=getFD(activeClYear);
+  const clients=[...new Set(data.map(r=>r.client))].filter(Boolean).sort();
+  const years=getYears();
+  document.getElementById('clientCards').innerHTML=clients.map((c,ci)=>{
+    const cr=fd.filter(r=>r.client===c);
+    const totalRev=sum(cr,'revenue'),totalGM=sum(cr,'gm');
+    const yearRows=years.map(y=>{
+      const yr=cr.filter(r=>String(r.year)===y);if(!yr.length)return'';
+      const rev=sum(yr,'revenue'),cost=sum(yr,'cost'),gm=sum(yr,'gm');
+      return `<tr><td>${y}</td><td class="tr">${fN(rev)}</td><td class="tr">${fN(cost)}</td><td class="tr ${gm>=0?'pos':'neg'}">${fN(gm)}</td><td class="tr">${pct(rev>0?gm/rev*100:0)}</td></tr>`;
+    }).filter(Boolean).join('');
+    return `<div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:${C[ci%C.length]}22;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:${C[ci%C.length]};">${c.substring(0,2).toUpperCase()}</div>
+        <div><div style="font-weight:600;font-size:14px;">${c}</div><div style="font-size:12px;color:var(--text2);">${cr.length} shipments</div></div>
+        <div style="margin-left:auto;text-align:right;"><div style="font-size:18px;font-weight:600;">${fN(totalRev)}</div><div style="font-size:11px;color:var(--text2);">Total Revenue (NGN)</div></div>
+      </div>
+      <div class="overflow-x"><table><thead><tr><th>Year</th><th class="tr">Revenue (₦)</th><th class="tr">Cost (₦)</th><th class="tr">Gross Margin (₦)</th><th class="tr">Margin %</th></tr></thead>
+      <tbody>${yearRows||'<tr><td colspan="5" style="text-align:center;color:var(--text3);">No data for selected period</td></tr>'}</tbody></table></div>
+    </div>`;
+  }).join('')||'<div style="text-align:center;padding:3rem;color:var(--text3);">No client data yet.</div>';
+}
+
+// ── CSV IMPORT ─────────────────────────────────────────────
+function openCSVModal(){csvHeaders=[];csvRows=[];document.getElementById('csvMapSection').style.display='none';document.getElementById('noFileSection').style.display='flex';document.getElementById('importFeedback').innerHTML='';document.getElementById('csvFileInput').value='';document.getElementById('dropZone').querySelector('.drop-zone-label').innerHTML='<strong>Choose a file</strong> or drag &amp; drop here';document.getElementById('csvModal').classList.add('open');}
+function closeCSVModal(){document.getElementById('csvModal').classList.remove('open');}
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f)parseCSVFile(f);});
+function handleFileSelect(e){const f=e.target.files[0];if(f)parseCSVFile(f);}
+function parseCSVFile(file){if(!file.name.endsWith('.csv')&&file.type!=='text/csv'){alert('Please upload a CSV file.');return;}dz.querySelector('.drop-zone-label').innerHTML='<strong>'+file.name+'</strong> loaded';const reader=new FileReader();reader.onload=e=>processCSVText(e.target.result);reader.readAsText(file);}
+function parseCSVLine(line){const result=[];let cur='',inQ=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}else if(c===','&&!inQ){result.push(cur.trim());cur='';}else cur+=c;}result.push(cur.trim());return result;}
+function processCSVText(text){const lines=text.split(/\r?\n/).filter(l=>l.trim());if(lines.length<2){document.getElementById('importFeedback').innerHTML='<div class="import-msg error">CSV must have at least a header and one data row.</div>';return;}csvHeaders=parseCSVLine(lines[0]);csvRows=lines.slice(1).map(l=>parseCSVLine(l));const autoMap={};FIELDS.forEach(f=>{const idx=csvHeaders.findIndex(h=>{const hl=h.toLowerCase().replace(/\([^)]*\)/g,'').replace(/\s/g,'').replace(/[^a-z0-9]/g,'');return hl===f.label.toLowerCase().replace(/\s/g,'')||hl===f.key||(f.key==='ft20'&&(hl==='20ft'||hl==='20'))||(f.key==='ft40'&&(hl==='40ft'||hl==='40'))||(f.key==='gm'&&(hl==='grossmargin'||hl==='margin'||hl==='grossmarginngn'||hl==='netprofit'||hl==='profit'))||(f.key==='ref'&&(hl==='fileref'||hl==='ref'))||(f.key==='service'&&(hl==='servicetype'||hl==='service'))||(f.key==='invoice'&&(hl==='invoiceno'||hl==='invoicenumber'||hl==='invoice'))||(f.key==='client'&&(hl==='clientname'||hl==='client'))||(f.key==='revenue'&&(hl==='revenuengn'||hl==='revenueusd'||hl==='rev'))||(f.key==='cost'&&(hl==='costngn'||hl==='costusd'))||(f.key==='vat'&&(hl==='vatngn'||hl==='vatusd'));});autoMap[f.key]=idx>=0?String(idx):'';});document.getElementById('mapGrid').innerHTML=FIELDS.map(f=>`<div class="map-row"><span class="map-label">${f.label}</span><select id="map-${f.key}" style="flex:1;font-size:12px;"><option value="">— skip —</option>${csvHeaders.map((h,i)=>`<option value="${i}"${autoMap[f.key]===String(i)?' selected':''}>${h}</option>`).join('')}</select></div>`).join('');document.getElementById('previewTable').innerHTML=`<table><thead><tr>${csvHeaders.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${csvRows.slice(0,5).map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;document.getElementById('csvMapSection').style.display='block';document.getElementById('noFileSection').style.display='none';document.getElementById('importFeedback').innerHTML=`<div class="import-msg info">${csvRows.length} rows found. Review mapping then click Import.</div>`;}
+function doImport(){const getMap=k=>{const v=document.getElementById('map-'+k).value;return v===''?null:parseInt(v);};const mapping={};FIELDS.forEach(f=>{mapping[f.key]=getMap(f.key);});if(mapping.client===null){document.getElementById('importFeedback').innerHTML='<div class="import-msg error">Client Name column must be mapped.</div>';return;}const imported=[];const skipped=[];csvRows.forEach((row,ri)=>{if(row.length===0||(row.length===1&&row[0]===''))return;const get=k=>mapping[k]!==null&&mapping[k]<row.length?row[mapping[k]].replace(/^"|"$/g,'').trim():'';const rev=parseFloat(get('revenue').replace(/[,₦\s]/g,''))||0;const cost=parseFloat(get('cost').replace(/[,₦\s]/g,''))||0;const rec={year:parseInt(get('year'))||new Date().getFullYear(),date:get('date'),ref:get('ref'),service:get('service'),ft20:parseInt(get('ft20'))||0,ft40:parseInt(get('ft40'))||0,invoice:get('invoice'),revenue:rev,cost:cost,vat:parseFloat(get('vat').replace(/[,₦\s]/g,''))||0,gm:rev-cost,gmpct:rev>0?((rev-cost)/rev*100):0,client:get('client'),notes:get('notes')};if(!rec.client){skipped.push(ri+2);return;}imported.push(rec);});const mode=document.querySelector('input[name="importMode"]:checked').value;if(mode==='replace')data=imported;else data=[...data,...imported];saveData();renderTable();closeCSVModal();const msg='Imported '+imported.length+' records'+(skipped.length?' ('+skipped.length+' skipped)':'')+'.';setTimeout(()=>{document.getElementById('save-status').textContent=msg;setTimeout(()=>document.getElementById('save-status').textContent='',4000);},100);}
+
+// ── SAMPLE DATA ────────────────────────────────────────────
+function getSample(){
+  const clients=['Alpha Shipping','Beta Freight','Gamma Logistics','Delta Trade'],
+        services=['Import FCL','Export FCL','Import LCL','Export LCL'],rows=[];
+  for(let y=2022;y<=2025;y++)for(let m=0;m<12;m++)clients.forEach((c,ci)=>{
+    const rev=2500000+Math.random()*5000000,cost=rev*(0.55+Math.random()*0.2),gm=rev-cost;
+    rows.push({year:y,date:`${y}-${String(m+1).padStart(2,'0')}-${String(10+ci*5).padStart(2,'0')}`,ref:`REF-${y}-${String(rows.length+1).padStart(3,'0')}`,service:services[ci%services.length],ft20:Math.floor(Math.random()*5),ft40:Math.floor(Math.random()*3),invoice:`INV-${y}-${String(rows.length+1).padStart(3,'0')}`,revenue:Math.round(rev),cost:Math.round(cost),vat:Math.round(rev*0.075),gm:Math.round(gm),client:c,notes:''});
+  });
+  return rows;
+}
+
+function init(){renderTable();}
+loadData();
+</script>
+</body>
+</html>
